@@ -3,6 +3,15 @@ const app = express();
 
 const notFound = require("./middleware/not-found");
 const errorHandler = require("./middleware/error-handler");
+const userRouter = require("./routes/userRoutes");
+
+// Globals
+global.user_id = null;
+global.users = [];
+global.tasks = [];
+
+// Middleware to parse JSON request bodies
+app.use(express.json({ limit: "1kb" }));
 
 app.use((req, res, next) => {
   console.log("Method:", req.method);
@@ -14,11 +23,14 @@ app.use((req, res, next) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Hello, World!");
+  res.json({ message: "Hello, World!" });
 });
+
 app.post("/testpost", (req, res) => {
-  res.send("POST request received!");
+  res.json({ message: "POST request received!" });
 });
+
+app.use("/api/users", userRouter);
 
 app.use(notFound);
 app.use(errorHandler);
