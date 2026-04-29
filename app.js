@@ -1,9 +1,11 @@
 const express = require("express");
 const app = express();
 
+const authMiddleware = require("./middleware/auth");
+const taskRouter = require("./routers/taskRoutes");
 const notFound = require("./middleware/not-found");
 const errorHandler = require("./middleware/error-handler");
-const userRouter = require("./routes/userRoutes");
+const userRouter = require("./routers/userRoutes");
 
 // Globals
 global.user_id = null;
@@ -30,7 +32,11 @@ app.post("/testpost", (req, res) => {
   res.json({ message: "POST request received!" });
 });
 
+// Public routes
 app.use("/api/users", userRouter);
+
+// Protected task routes
+app.use("/api/tasks", authMiddleware, taskRouter);
 
 app.use(notFound);
 app.use(errorHandler);
