@@ -41,10 +41,8 @@ const register = async (req, res, next) => {
 
     const { name, email } = value;
 
-    let user = null;
-
-    try {
-      user = await prisma.user.create({
+    const result = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
         data: {
           name,
           email,
@@ -54,29 +52,69 @@ const register = async (req, res, next) => {
           id: true,
           name: true,
           email: true,
+          createdAt: true,
         },
       });
-    } catch (err) {
-      if (
-        err.name === "PrismaClientKnownRequestError" &&
-        err.code === "P2002"
-      ) {
-        return res.status(StatusCodes.BAD_REQUEST).json({
-          error: "Email already registered",
-        });
-      } else {
-        return next(err);
-      }
-    }
 
-    global.user_id = user.id;
+      const welcomeTaskData = [
+        {
+          title: "Complete your profile",
+          userId: newUser.id,
+          priority: "medium",
+        },
+        {
+          title: "Add your first task",
+          userId: newUser.id,
+          priority: "high",
+        },
+        {
+          title: "Explore the app",
+          userId: newUser.id,
+          priority: "low",
+        },
+      ];
+
+      await tx.task.createMany({
+        data: welcomeTaskData,
+      });
+
+      const welcomeTasks = await tx.task.findMany({
+        where: {
+          userId: newUser.id,
+          title: {
+            in: welcomeTaskData.map((task) => task.title),
+          },
+        },
+        select: {
+          id: true,
+          title: true,
+          isCompleted: true,
+          userId: true,
+          priority: true,
+        },
+      });
+
+      return {
+        user: newUser,
+        welcomeTasks,
+      };
+    });
+
+    global.user_id = result.user.id;
 
     return res.status(StatusCodes.CREATED).json({
-      name: user.name,
-      email: user.email,
+      user: result.user,
+      welcomeTasks: result.welcomeTasks,
+      transactionStatus: "success",
     });
-  } catch (e) {
-    return next(e);
+  } catch (err) {
+    if (err.name === "PrismaClientKnownRequestError" && err.code === "P2002") {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        error: "Email already registered",
+      });
+    }
+
+    return next(err);
   }
 };
 
@@ -94,6 +132,12 @@ const logon = async (req, res, next) => {
 
     const user = await prisma.user.findUnique({
       where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        hashedPassword: true,
+      },
     });
 
     if (!user) {
