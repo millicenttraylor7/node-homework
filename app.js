@@ -7,6 +7,7 @@ const taskRouter = require("./routers/taskRoutes");
 const notFound = require("./middleware/not-found");
 const errorHandler = require("./middleware/error-handler");
 const userRouter = require("./routers/userRoutes");
+const analyticsRoutes = require("./routers/analyticsRoutes");
 
 // Globals
 global.user_id = null;
@@ -15,6 +16,7 @@ global.tasks = [];
 
 // Middleware to parse JSON request bodies
 app.use(express.json({ limit: "1kb" }));
+app.use("/api/analytics", authMiddleware, analyticsRoutes);
 
 app.use((req, res, next) => {
   console.log("Method:", req.method);
