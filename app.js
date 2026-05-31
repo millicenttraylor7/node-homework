@@ -1,22 +1,33 @@
+require("dotenv").config();
+const helmet = require("helmet");
+const { xss } = require("express-xss-sanitizer");
+const rateLimiter = require("express-rate-limit");
 const express = require("express");
-const app = express();
+const cookieParser = require("cookie-parser");
 const prisma = require("./db/prisma");
+const jwtMiddleware = require("./middleware/jwtMiddleware");
 
-const authMiddleware = require("./middleware/auth");
 const taskRouter = require("./routers/taskRoutes");
 const notFound = require("./middleware/not-found");
 const errorHandler = require("./middleware/error-handler");
 const userRouter = require("./routers/userRoutes");
 const analyticsRoutes = require("./routers/analyticsRoutes");
 
-// Globals
-global.user_id = null;
-global.users = [];
-global.tasks = [];
+const app = express();
 
-// Middleware to parse JSON request bodies
+app.set("trust proxy", 1);
+
+// Middleware
+app.use(
+  rateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+  }),
+);
+app.use(helmet());
 app.use(express.json({ limit: "1kb" }));
-app.use("/api/analytics", authMiddleware, analyticsRoutes);
+app.use(cookieParser());
+app.use(xss());
 
 app.use((req, res, next) => {
   console.log("Method:", req.method);
@@ -30,6 +41,7 @@ app.use((req, res, next) => {
 app.get("/", (req, res) => {
   res.json({ message: "Hello, World!" });
 });
+
 app.get("/health", async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -42,6 +54,7 @@ app.get("/health", async (req, res) => {
     });
   }
 });
+
 app.post("/testpost", (req, res) => {
   res.json({ message: "POST request received!" });
 });
@@ -49,13 +62,16 @@ app.post("/testpost", (req, res) => {
 // Public routes
 app.use("/api/users", userRouter);
 
-// Protected task routes
-app.use("/api/tasks", authMiddleware, taskRouter);
+// Protected routes
+app.use("/api/analytics", jwtMiddleware, analyticsRoutes);
+app.use("/api/tasks", jwtMiddleware, taskRouter);
 
+// Error handling
 app.use(notFound);
 app.use(errorHandler);
 
 const port = process.env.PORT || 3000;
+
 const server = app.listen(port, () =>
   console.log(`Server is listening on port ${port}...`),
 );
@@ -93,10 +109,12 @@ async function shutdown(code = 0) {
 
 process.on("SIGINT", () => shutdown(0));
 process.on("SIGTERM", () => shutdown(0));
+
 process.on("uncaughtException", (err) => {
   console.error("Uncaught exception:", err);
   shutdown(1);
 });
+
 process.on("unhandledRejection", (reason) => {
   console.error("Unhandled rejection:", reason);
   shutdown(1);
