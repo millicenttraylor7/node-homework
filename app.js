@@ -6,7 +6,7 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const prisma = require("./db/prisma");
 const jwtMiddleware = require("./middleware/jwtMiddleware");
-
+const cors = require("cors");
 const taskRouter = require("./routers/taskRoutes");
 const notFound = require("./middleware/not-found");
 const errorHandler = require("./middleware/error-handler");
@@ -16,6 +16,15 @@ const analyticsRoutes = require("./routers/analyticsRoutes");
 const app = express();
 
 app.set("trust proxy", 1);
+
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "X-CSRF-TOKEN"],
+  }),
+);
 
 // Middleware
 app.use(
