@@ -3,7 +3,8 @@ const { userSchema } = require("../validation/userSchema");
 const crypto = require("crypto");
 const util = require("util");
 const scrypt = util.promisify(crypto.scrypt);
-
+const jwt = require("jsonwebtoken");
+const { randomUUID } = require("crypto");
 const prisma = require("../db/prisma");
 
 async function hashPassword(password) {
@@ -21,6 +22,32 @@ async function comparePassword(inputPassword, storedHash) {
 
   return crypto.timingSafeEqual(keyBuffer, derivedKey);
 }
+
+const cookieFlags = (req) => {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
+    ...(isProduction && { domain: req.hostname }),
+  };
+};
+
+const setJwtCookie = (req, res, user) => {
+  const payload = { id: user.id, csrfToken: randomUUID() };
+
+  const token = jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: "1h",
+  });
+
+  res.cookie("jwt", token, {
+    ...cookieFlags(req),
+    maxAge: 3600000,
+  });
+
+  return payload.csrfToken;
+};
 
 const register = async (req, res, next) => {
   if (!req.body) req.body = {};
@@ -100,11 +127,12 @@ const register = async (req, res, next) => {
       };
     });
 
-    global.user_id = result.user.id;
+    const csrfToken = setJwtCookie(req, res, result.user);
 
     return res.status(StatusCodes.CREATED).json({
       user: result.user,
       welcomeTasks: result.welcomeTasks,
+      csrfToken,
       transactionStatus: "success",
     });
   } catch (err) {
@@ -154,11 +182,12 @@ const logon = async (req, res, next) => {
       });
     }
 
-    global.user_id = user.id;
+    const csrfToken = setJwtCookie(req, res, user);
 
     return res.status(StatusCodes.OK).json({
       name: user.name,
       email: user.email,
+      csrfToken,
     });
   } catch (err) {
     next(err);
@@ -166,7 +195,7 @@ const logon = async (req, res, next) => {
 };
 
 const logoff = (req, res) => {
-  global.user_id = null;
+  res.clearCookie("jwt", cookieFlags(req));
 
   return res.sendStatus(StatusCodes.OK);
 };
