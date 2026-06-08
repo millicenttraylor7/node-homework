@@ -136,6 +136,11 @@ const index = async (req, res) => {
   const totalTasks = await prisma.task.count({
     where: whereClause,
   });
+  if (totalTasks === 0) {
+    return res.status(404).json({
+      message: "No tasks found.",
+    });
+  }
 
   const pagination = {
     page: page,
