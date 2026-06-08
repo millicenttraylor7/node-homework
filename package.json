@@ -13,7 +13,6 @@
     "dev": "nodemon app.js"
   },
   "author": "Code the Dream",
-  "author": "Code the Dream",
   "license": "MIT",
   "dependencies": {
     "@prisma/client": "^6.19.3",

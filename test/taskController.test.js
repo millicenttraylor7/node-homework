@@ -1,7 +1,7 @@
 const httpMocks = require("node-mocks-http");
 const EventEmitter = require("events").EventEmitter;
 const prisma = require("../db/prisma");
-
+const waitForRouteHandlerCompletion = require("./waitForRouteHandlerCompletion");
 const {
   create,
   index,
@@ -15,14 +15,6 @@ let user2;
 let saveRes;
 let saveData;
 let saveTaskId;
-
-const waitForRouteHandlerCompletion = async (handler, req, res) => {
-  await handler(req, res, (err) => {
-    if (err) {
-      throw err;
-    }
-  });
-};
 
 beforeAll(async () => {
   await prisma.task.deleteMany();
