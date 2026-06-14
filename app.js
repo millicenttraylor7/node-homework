@@ -12,6 +12,8 @@ const notFound = require("./middleware/not-found");
 const errorHandler = require("./middleware/error-handler");
 const userRouter = require("./routers/userRoutes");
 const analyticsRoutes = require("./routers/analyticsRoutes");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger");
 
 const app = express();
 
@@ -67,6 +69,8 @@ app.get("/health", async (req, res) => {
 app.post("/testpost", (req, res) => {
   res.json({ message: "POST request received!" });
 });
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Public routes
 app.use("/api/users", userRouter);
