@@ -1,0 +1,100 @@
+Node Homework Assignment 11 – Final Project
+
+Render URL:
+https://node-homework-uyct.onrender.com
+
+Additional Functionality Added:
+
+1. Swagger API Documentation
+
+   * Added Swagger UI documentation available at:
+     /api-docs
+   * Allows developers to view and test API endpoints through a browser interface.
+
+2. Analytics API Endpoints
+
+   * Added analytics endpoints to provide task statistics and reporting.
+
+API Documentation
+
+1. Get User Analytics
+   Method: GET
+
+Path:
+/api/analytics/users/:id
+
+Description:
+Returns task statistics and recent task activity for a specific user.
+
+Parameters:
+
+* id (Path Parameter): User ID
+
+Request Body:
+None
+
+Example:
+GET /api/analytics/users/1
+
+2. Search Tasks
+   Method: GET
+
+Path:
+/api/analytics/tasks/search
+
+Description:
+Searches tasks using a keyword.
+
+Query Parameters:
+
+* search (string)
+
+Request Body:
+None
+
+Example:
+GET /api/analytics/tasks/search?search=homework
+
+3. Bulk Create Tasks
+   Method: POST
+
+Path:
+/api/tasks/bulk
+
+Description:
+Creates multiple tasks in a single request.
+
+Request Body:
+{
+"tasks": [
+{
+"title": "Task One"
+},
+{
+"title": "Task Two"
+}
+]
+}
+
+4. Swagger Documentation
+   Method: GET
+
+Path:
+/api-docs
+
+Description:
+Interactive API documentation generated with Swagger UI.
+
+Request Body:
+None
+
+Testing Performed:
+
+* Unit tests with Jest
+* API testing using Postman
+* Frontend testing with React application
+* Database testing with Prisma and PostgreSQL
+* Cloud deployment testing using Render and Neon PostgreSQL
+
+GitHub Pull Request:
+https://github.com/millicenttraylor7/node-homework/pull/11
